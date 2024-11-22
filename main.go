@@ -140,7 +140,7 @@ func generateMarkdown(root string,structure string) string{
 }
 
 func writeToFile(filename string,content string) error{
-	logrus.Debug("writing to file: %s",filename)
+	logrus.Debugf("writing to file: %s",filename)
 	fileP,err:=os.Create(filename)
 	if err!=nil{
 		return fmt.Errorf("error in creating file: %s",err)
