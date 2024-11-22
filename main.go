@@ -29,7 +29,7 @@ func patternToRegex(pattern string) (string,error){
 
 	_,err:= regexp.Compile(regexPattern)
 	if err!=nil{
-		return "",fmt.Errorf("Error in compiling the regex pattern: %s",err)
+		return "",fmt.Errorf("error in compiling the regex pattern: %s",err)
 	}
 
 	return regexPattern,nil
@@ -40,7 +40,7 @@ func scanDirectory(root string,prefix string,ignoredDirs map[string]struct{},sty
 	var result strings.Builder
 	entries,err:= os.ReadDir(root)
 	if err!=nil{
-		return "",fmt.Errorf("Error in reading directory: %s",err)
+		return "",fmt.Errorf("error in reading directory: %s",err)
 	}
 
 	filteredEntries:=[]os.DirEntry{}
@@ -54,16 +54,16 @@ func scanDirectory(root string,prefix string,ignoredDirs map[string]struct{},sty
 		for _,pattern:=range excludePatterns{
 			regexPattern,err:= patternToRegex(pattern)
 			if err!=nil {
-				return "",fmt.Errorf("Error in converting pattern %s to regex: %v",pattern,err)
+				return "",fmt.Errorf("error in converting pattern %s to regex: %v",pattern,err)
 			}
 
 			matched,err:=regexp.MatchString(regexPattern,entry.Name())
 			if err!=nil{
-				return "",fmt.Errorf("Error in matching pattern %s with entry: %s",pattern,entry.Name())
+				return "",fmt.Errorf("error in matching pattern %s with entry: %s",pattern,entry.Name())
 			}
 
 			if matched{
-				logrus.Debugf("Excluding directory: %s",entry.Name())
+				logrus.Debugf("excluding directory: %s",entry.Name())
 				excluded=true
 				break
 			}
@@ -108,7 +108,7 @@ func readDirIgnore(root string)(map[string]struct{},error){
 		if os.IsNotExist(err){
 			return ignoredDirs,nil
 		}
-		return nil,fmt.Errorf("Error in opening file: %s",err)
+		return nil,fmt.Errorf("error in opening file: %s",err)
 	}
 	defer file.Close()
 
@@ -121,7 +121,7 @@ func readDirIgnore(root string)(map[string]struct{},error){
 	}
 
 	if err:= scanner.Err();err!=nil{
-		return nil,fmt.Errorf("Error in reading .dirignore: %v",err)
+		return nil,fmt.Errorf("error in reading .dirignore: %v",err)
 	}
 
 	return ignoredDirs,nil
@@ -140,16 +140,16 @@ func generateMarkdown(root string,structure string) string{
 }
 
 func writeToFile(filename string,content string) error{
-	logrus.Debug("Writing to file: %s",filename)
+	logrus.Debug("writing to file: %s",filename)
 	fileP,err:=os.Create(filename)
 	if err!=nil{
-		return fmt.Errorf("Error in creating file: %s",err)
+		return fmt.Errorf("error in creating file: %s",err)
 	}
 	defer fileP.Close()
 
 	_,err=fileP.WriteString(content)
 	if err!=nil{
-		return fmt.Errorf("Error in writing to file: %s",err)
+		return fmt.Errorf("error in writing to file: %s",err)
 	}
 	return nil
 }
@@ -175,7 +175,7 @@ func main(){
 
 			ignoreDirs,err:= readDirIgnore(dir)
 			if err!=nil{
-				return fmt.Errorf("Error in reading .dirignore: %v",err)
+				return fmt.Errorf("error in reading .dirignore: %v",err)
 			}
 
 			style := ConnectorStyle{
@@ -190,13 +190,13 @@ func main(){
 			}
 			structure,err:= scanDirectory(dir,"",ignoreDirs,style,exclude,maxDepth,0)
 			if err!=nil{
-				return fmt.Errorf("Error in scanning directory: %v",err)
+				return fmt.Errorf("error in scanning directory: %v",err)
 			}
 
 			markdownContent := generateMarkdown(dir,structure)
 
 			if err:= writeToFile(output,markdownContent);err!=nil{
-				return fmt.Errorf("Error in writing to file: %v",err)
+				return fmt.Errorf("error in writing to file: %v",err)
 			}
 
 			fmt.Println("Mardown Directory Hirarchy generated successfully")
