@@ -127,6 +127,33 @@ func readDirIgnore(root string)(map[string]struct{},error){
 	return ignoredDirs,nil
 }
 
+func ensureMarkdownExtension(filename string) string{
+	if filepath.Ext(filename)!=".md"{
+		filename=filename+".md"
+	}
+	return filename
+}
+
+func generateMarkdown(root string,structure string) string{
+	logrus.Debugf("Generating markdown for directory: %s",root)
+	return fmt.Sprintf("# Directory Structure for %s\n\n```\n%s```\n",root,structure)
+}
+
+func writeToFile(filename string,content string) error{
+	logrus.Debug("Writing to file: %s",filename)
+	fileP,err:=os.Create(filename)
+	if err!=nil{
+		return fmt.Errorf("Error in creating file: %s",err)
+	}
+	defer fileP.Close()
+
+	_,err=fileP.WriteString(content)
+	if err!=nil{
+		return fmt.Errorf("Error in writing to file: %s",err)
+	}
+	return nil
+}
+
 func main(){
 	var(
 		intermediate string
@@ -138,18 +165,55 @@ func main(){
 		verbose bool
 	)
 
-	var rootCmd = &cobra.Command{}
+	var rootCmd = &cobra.Command{
+		Use: "dirscanner <directory to scan> <output markdown file> [flags]",
+		Short: "Scan a directory and output the structure in markdown format",
+		Args: cobra.MinimumNArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error{
+			dir:=args[0]
+			output:= ensureMarkdownExtension(args[1])
+
+			ignoreDirs,err:= readDirIgnore(dir)
+			if err!=nil{
+				return fmt.Errorf("Error in reading .dirignore: %v",err)
+			}
+
+			style := ConnectorStyle{
+				Intermediate: intermediate,
+				Last: last,
+				Prefix: prefix,
+				Branch: branch,
+			}
+
+			if verbose{
+				logrus.SetLevel(logrus.DebugLevel)
+			}
+			structure,err:= scanDirectory(dir,"",ignoreDirs,style,exclude,maxDepth,0)
+			if err!=nil{
+				return fmt.Errorf("Error in scanning directory: %v",err)
+			}
+
+			markdownContent := generateMarkdown(dir,structure)
+
+			if err:= writeToFile(output,markdownContent);err!=nil{
+				return fmt.Errorf("Error in writing to file: %v",err)
+			}
+
+			fmt.Println("Mardown Directory Hirarchy generated successfully")
+			return nil
+		},
+	}
 
 
 	rootCmd.Flags().StringVar(&intermediate, "intermediate", "├── ", "Symbol for intermediate nodes")
-		rootCmd.Flags().StringVar(&last, "last", "└── ", "Symbol for the last node in a directory")
-		rootCmd.Flags().StringVar(&prefix, "prefix", "    ", "Prefix for child nodes")
-		rootCmd.Flags().StringVar(&branch, "branch", "│   ", "Branch for intermediate nodes")
-		rootCmd.Flags().StringSliceVar(&exclude, "exclude", []string{}, "Exclude files or directories matching these patterns (e.g., '*.txt')")
-		rootCmd.Flags().IntVar(&maxDepth, "depth", -1, "Limit the depth of the directory traversal (-1 for no limit)")
-		rootCmd.Flags().BoolVarP(&verbose, "verbose", "v", false, "Whether or not to show debug messages")
+	rootCmd.Flags().StringVar(&last, "last", "└── ", "Symbol for the last node in a directory")
+	rootCmd.Flags().StringVar(&prefix, "prefix", "    ", "Prefix for child nodes")
+	rootCmd.Flags().StringVar(&branch, "branch", "│   ", "Branch for intermediate nodes")
+	rootCmd.Flags().StringSliceVar(&exclude, "exclude", []string{}, "Exclude files or directories matching these patterns (e.g., '*.txt')")
+	rootCmd.Flags().IntVar(&maxDepth, "depth", -1, "Limit the depth of the directory traversal (-1 for no limit)")
+	rootCmd.Flags().BoolVarP(&verbose, "verbose", "v", false, "Whether or not to show debug messages")
 
-		if err := rootCmd.Execute(); err != nil {
-			logrus.Fatal(err)
-		}
+	if err := rootCmd.Execute(); err != nil {
+		logrus.Fatal(err)
+	}
 }
