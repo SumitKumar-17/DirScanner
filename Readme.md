@@ -1,6 +1,6 @@
 # DirScanner
 
-![image](https://github.com/user-attachments/assets/dacfb64e-fb73-4ab2-8a08-f595f9ab18fb)
+![image](https://github.com/user-attachments/assets/dacfb64e-fb73-4ad2-8a08-f595f9ab18fb)
 
 DirScanner is a CLI tool written in Go that scans a directory and generates a Markdown file containing its tree structure. It supports custom connector styles, pattern-based exclusions, depth limiting, file sizes, and summary statistics.
 
